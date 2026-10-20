@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="ca">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Repartiment d'escons — València</title>
+<style>
+:root{--bg:#f4f6fb;--card:#fff;--ink:#182033;--muted:#65708a;--accent:#3157d5;--line:#e2e7f0;--soft:#edf1ff}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+header{background:#172554;color:white;padding:32px 20px}header .wrap,main{max-width:1050px;margin:auto}header p{color:#dbe5ff;margin:8px 0 0}h1{margin:0;font-size:clamp(1.6rem,4vw,2.3rem)}h2{font-size:1.15rem;margin:0 0 14px}
+main{padding:24px 16px 48px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:0 5px 20px #18203308;margin-bottom:18px}
+.controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.field label{display:block;font-size:.88rem;font-weight:650;margin-bottom:5px}.field input{width:100%;border:1px solid #cbd3e3;border-radius:9px;padding:10px 11px;font:inherit;background:white;color:var(--ink)}.hint{color:var(--muted);font-size:.85rem;margin:8px 0 0}
+table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--line)}th{font-size:.82rem;color:var(--muted);font-weight:700}td input{width:100%;min-width:0;padding:9px;border:1px solid #cbd3e3;border-radius:8px;font:inherit}td input[type=number]{text-align:right}.party-table td:last-child,.party-table th:last-child{text-align:center;width:52px}
+button{border:0;border-radius:9px;padding:10px 14px;font:inherit;font-weight:700;cursor:pointer}.primary{background:var(--accent);color:white}.secondary{background:var(--soft);color:#2441a7}.danger{background:#fff0f0;color:#a32929;padding:7px 10px}.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:14px}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}.stat{background:#f7f8fc;border:1px solid var(--line);border-radius:12px;padding:12px}.stat span{display:block;color:var(--muted);font-size:.82rem}.stat strong{font-size:1.35rem}.results-table td:last-child,.results-table th:last-child{text-align:right}.bar{height:8px;background:#e8ecf5;border-radius:8px;overflow:hidden;margin-top:6px}.bar i{display:block;height:100%;background:var(--accent)}.notice{padding:12px 14px;background:#fff8e6;border:1px solid #f3df9e;border-radius:10px;color:#674e0c;font-size:.9rem;margin-top:12px}.empty{color:var(--muted);padding:15px 0}footer{text-align:center;color:var(--muted);font-size:.85rem;padding:0 16px 28px}
+@media(max-width:760px){.grid{grid-template-columns:1fr}.stats{grid-template-columns:1fr}.controls{grid-template-columns:1fr 1fr}header{padding:25px 16px}.card{padding:16px}th,td{padding:8px 5px}}
+</style>
+</head>
+<body>
+<header><div class="wrap"><h1>Repartiment d'escons · València</h1><p>Calculadora interactiva amb el sistema proporcional de la llei d'Hondt.</p></div></header>
+<main>
+<div class="grid">
+<section class="card">
+<h2>1. Configuració electoral</h2>
+<div class="controls">
+<div class="field"><label for="seats">Nombre d'escons</label><input id="seats" type="number" min="1" max="350" value="16"></div>
+<div class="field"><label for="threshold">Llindar electoral (%)</label><input id="threshold" type="number" min="0" max="100" step="0.1" value="3"></div>
+</div>
+<p class="hint">Valors inicials orientatius per a una elecció al Congrés a la circumscripció de València: 16 escons i llindar del 3% dels vots vàlids.</p>
+<h2 style="margin-top:22px">2. Partits i vots</h2>
+<table class="party-table"><thead><tr><th>Partit (nom editable)</th><th>Vots</th><th></th></tr></thead><tbody id="parties"></tbody></table>
+<div class="actions"><button class="secondary" id="add">＋ Afegir partit</button><button class="secondary" id="example">Restablir exemple</button></div>
+</section>
+<section class="card">
+<h2>3. Resultat del repartiment</h2>
+<div class="stats"><div class="stat"><span>Total de vots introduïts</span><strong id="totalVotes">0</strong></div><div class="stat"><span>Partits amb escons</span><strong id="qualified">0</strong></div><div class="stat"><span>Escons assignats</span><strong id="allocated">0/16</strong></div></div>
+<div id="result"></div>
+<div class="notice" id="notice">Canvia els vots, els noms o la configuració per actualitzar el càlcul.</div>
+</section>
+</div>
+<section class="card">
+<h2>Com es reparteixen els escons?</h2>
+<p>Per cada partit que supera el llindar, es divideixen els seus vots entre 1, 2, 3, 4… fins al nombre d'escons en joc. Després s'ordenen tots els quocients de major a menor i s'assigna un escó a cadascun dels quocients més alts fins a completar el total d'escons.</p>
+<p class="hint">Aquesta és una ferramenta educativa. Les normes exactes depenen de l'elecció: revisa el nombre d'escons i el llindar legal abans d'utilitzar resultats reals. En cas d'empat exacte, esta web aplica un criteri tècnic estable per a resoldre'l.</p>
+</section>
+</main>
+<footer>Fet amb un únic fitxer HTML · No envia ni guarda dades en cap servidor.</footer>
+<script>
+const initial=[["Partit A",420000],["Partit B",310000],["Partit C",180000],["Partit D",90000],["Partit E",40000]];
+const partiesEl=document.getElementById("parties");
+const fmt=n=>Number(n).toLocaleString("ca-ES");
+function addParty(name="Partit nou",votes=0){const tr=document.createElement("tr");tr.innerHTML='<td><input aria-label="Nom del partit" class="pname" maxlength="80"></td><td><input aria-label="Nombre de vots" class="pvotes" type="number" min="0" step="1"></td><td><button class="danger" aria-label="Eliminar partit" title="Eliminar partit">×</button></td>';tr.querySelector(".pname").value=name;tr.querySelector(".pvotes").value=votes;tr.querySelectorAll("input").forEach(i=>i.addEventListener("input",calculate));tr.querySelector("button").addEventListener("click",()=>{tr.remove();calculate()});partiesEl.appendChild(tr);calculate()}
+function getParties(){return [...partiesEl.querySelectorAll("tr")].map((tr,i)=>({name:tr.querySelector(".pname").value.trim()||`Partit ${i+1}`,votes:Math.max(0,Math.floor(Number(tr.querySelector(".pvotes").value)||0)),index:i,seats:0}));}
+function calculate(){
+ const seats=Math.max(1,Math.min(350,Math.floor(Number(document.getElementById("seats").value)||1)));
+ const threshold=Math.max(0,Math.min(100,Number(document.getElementById("threshold").value)||0));
+ const ps=getParties(), total=ps.reduce((s,p)=>s+p.votes,0);
+ const minimum=total*threshold/100;
+ const eligible=ps.filter(p=>p.votes>=minimum && p.votes>0);
+ const quotients=[];
+ eligible.forEach(p=>{for(let d=1;d<=seats;d++)quotients.push({party:p,divisor:d,value:p.votes/d})});
+ quotients.sort((a,b)=>b.value-a.value || a.party.index-b.party.index || a.divisor-b.divisor);
+ const winners=quotients.slice(0,seats);
+ winners.forEach(q=>q.party.seats++);
+ document.getElementById("totalVotes").textContent=fmt(total);
+ document.getElementById("qualified").textContent=eligible.length;
+ document.getElementById("allocated").textContent=`${winners.length}/${seats}`;
+ const ranked=[...ps].sort((a,b)=>b.seats-a.seats||b.votes-a.votes);
+ const result=document.getElementById("result");
+ if(!total){result.innerHTML='<p class="empty">Introdueix vots per a veure els resultats.</p>';}
+ else if(!eligible.length){result.innerHTML='<p class="empty">Cap partit supera el llindar electoral.</p>';}
+ else{
+ result.innerHTML='<table class="results-table"><thead><tr><th>Partit</th><th>Vots</th><th>% vots</th><th>Escons</th></tr></thead><tbody>'+ranked.map(p=>`<tr><td>${escapeHTML(p.name)}${p.votes>0&&p.votes<minimum?' <small>(no supera el llindar)</small>':''}<div class="bar"><i style="width:${seats?p.seats/seats*100:0}%"></i></div></td><td>${fmt(p.votes)}</td><td>${(p.votes/total*100).toLocaleString("ca-ES",{maximumFractionDigits:2})}%</td><td><strong>${p.seats}</strong></td></tr>`).join("")+'</tbody></table>';
+ }
+ document.getElementById("notice").textContent=`Llindar aplicat: ${threshold.toLocaleString("ca-ES")}% (${fmt(Math.ceil(minimum))} vots sobre el total introduït). ${winners.length<seats?`Només s'han pogut assignar ${winners.length} escons perquè no hi ha prou partits/vots elegibles.`:"Repartiment recalculat automàticament."}`;
+}
+function escapeHTML(s){return s.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+document.getElementById("add").addEventListener("click",()=>addParty());
+document.getElementById("example").addEventListener("click",()=>{partiesEl.innerHTML="";document.getElementById("seats").value=16;document.getElementById("threshold").value=3;initial.forEach(p=>addParty(...p));calculate()});
+document.getElementById("seats").addEventListener("input",calculate);
+document.getElementById("threshold").addEventListener("input",calculate);
+initial.forEach(p=>addParty(...p));
+</script>
+</body>
+</html>
